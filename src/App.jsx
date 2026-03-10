@@ -15,7 +15,7 @@ const CONFIG = {
   ubicacionURL: 'https://maps.app.goo.gl/XjH4XeYsBGjYK7d59',
   horaFin: '5:00 hs',
   alias: 'priki.gonza.boda',
-  titular: 'Gonzalo / Priki',
+  titular: 'Priscila Victoria Lopez Figueroa',
   // Formularios enviados a Netlify Forms (nombres: rsvp, musica)
   audioURL: '/sparkle.mp3',
   imagenFondo: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&q=80&w=1920',
