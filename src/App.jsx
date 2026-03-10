@@ -2,29 +2,10 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Gift, Heart, X, Volume2, VolumeX,
   CalendarHeart, ChevronLeft, ChevronRight, MapPin, Copy, Check,
-  Share2, UsersRound, Shirt, Images, ImagePlus
+  Share2, UsersRound, Shirt, Images, ImagePlus, CheckCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-
-// ─── CONFIGURACIÓN ────────────────────────────────────────────────
-const CONFIG = {
-  novios: { ella: 'Priki', el: 'Gonza' },
-  fecha: '2026-03-08T21:00:00',
-  fechaLegible: '25 de Julio de 2026',
-  lugar: 'Salón Villa Verde',
-  ubicacionURL: 'https://maps.app.goo.gl/XjH4XeYsBGjYK7d59',
-  horaFin: '5:00 hs',
-  alias: 'priki.gonza.boda',
-  titular: 'Priscila Victoria Lopez Figueroa',
-  // Formularios enviados a Netlify Forms (nombres: rsvp, musica)
-  audioURL: '/sparkle.mp3',
-  imagenFondo: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&q=80&w=1920',
-  imagenPortada: '/portada.jpeg',
-  fotosCarrusel: [
-    '/1.jpeg', '/2.jpeg', '/3.jpeg', '/4.jpeg',
-    '/5.jpeg', '/6.jpeg', '/7.jpeg', '/8.jpeg',
-  ],
-};
+import { CONFIG } from './config';
 
 // ─── UTILIDADES ───────────────────────────────────────────────────
 
@@ -612,6 +593,7 @@ const ChurchIcon = () => (
 export default function App() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showRSVP, setShowRSVP] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const audioRef = useRef(null);
   const countDown = useCountdown(CONFIG.fecha);
@@ -843,26 +825,47 @@ export default function App() {
 
         {/* 5 · MÚSICA — sección oculta */}
 
-        {/* 6 · REGALOS (sin asistencia) */}
+        {/* 6 · ACOMPÁÑANOS: Asistencia (solo antes/el día) + Regalos */}
         <RevealOnScroll delay={50}>
           <section id="regalos" className="card">
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', textAlign: 'center', marginBottom: '2.5rem' }}>Regalos</h2>
-            <div style={{ maxWidth: 420, margin: '0 auto', textAlign: 'center' }}>
-              <div className="animate-wiggle" style={{ marginBottom: '1.2rem' }}>
-                <Gift size={52} strokeWidth={1.2} color="#c4788a" />
-              </div>
-              <p style={{ color: '#6b5b5b', lineHeight: 1.75, marginBottom: '1.2rem', fontSize: '0.93rem' }}>
-                El mayor regalo es tu presencia. Si querés hacernos un presente, podés contribuir con nuestra luna de miel.
-              </p>
-              <div style={{ background: 'rgba(252,228,236,0.4)', width: '100%', padding: '1.2rem 1.4rem', borderRadius: '1.2rem', border: '1px solid rgba(243,182,194,0.5)', textAlign: 'left' }}>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#8b4552', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.8rem' }}>Datos Bancarios</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.6rem', marginBottom: '0.6rem', borderBottom: '1px solid rgba(243,182,194,0.4)' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Alias</span>
-                  <CopyAlias alias={CONFIG.alias} />
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', textAlign: 'center', marginBottom: '2.5rem' }}>
+              {weddingState === 'after' ? 'Regalos' : 'Acompáñanos'}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: weddingState === 'after' ? '1fr' : 'repeat(auto-fit,minmax(220px,1fr))', gap: '2.5rem' }}>
+              {/* Asistencia — solo antes o el día del casamiento */}
+              {weddingState !== 'after' && (
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div className="animate-heartbeat" style={{ marginBottom: '1.2rem' }}>
+                    <CheckCircle size={52} strokeWidth={1.2} color="#c4788a" />
+                  </div>
+                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Asistencia</h3>
+                  <p style={{ color: '#6b5b5b', lineHeight: 1.8, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                    Confirmá tu asistencia para ayudarnos con la organización.
+                  </p>
+                  <button onClick={() => setShowRSVP(true)} className="btn-primary" style={{ marginTop: 'auto' }}>
+                    Confirmar asistencia
+                  </button>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Titular</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{CONFIG.titular}</span>
+              )}
+              {/* Regalos */}
+              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div className="animate-wiggle" style={{ marginBottom: '1.2rem' }}>
+                  <Gift size={52} strokeWidth={1.2} color="#c4788a" />
+                </div>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Regalos</h3>
+                <p style={{ color: '#6b5b5b', lineHeight: 1.75, marginBottom: '1.2rem', fontSize: '0.93rem' }}>
+                  El mayor regalo es tu presencia. Si querés hacernos un presente, podés contribuir con nuestra luna de miel.
+                </p>
+                <div style={{ background: 'rgba(252,228,236,0.4)', width: '100%', padding: '1.2rem 1.4rem', borderRadius: '1.2rem', border: '1px solid rgba(243,182,194,0.5)', textAlign: 'left', marginTop: 'auto' }}>
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#8b4552', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.8rem' }}>Datos Bancarios</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.6rem', marginBottom: '0.6rem', borderBottom: '1px solid rgba(243,182,194,0.4)' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Alias</span>
+                    <CopyAlias alias={CONFIG.alias} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Titular</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{CONFIG.titular}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -931,7 +934,8 @@ export default function App() {
         <ShareWhatsApp />
       </footer>
 
-      {/* ── MODALES (ninguno activo por ahora) ── */}
+      {/* ── MODALES ── */}
+      {showRSVP && <RSVPModal onClose={() => setShowRSVP(false)} />}
 
       {/* ── ESTILOS ADICIONALES ── */}
       <style>{`
