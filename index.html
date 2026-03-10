@@ -20,6 +20,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Formularios ocultos para Netlify Forms (nombres deben coincidir con el envío desde React) -->
+    <form name="rsvp" data-netlify="true" netlify-honeypot="bot" style="display: none" aria-hidden="true">
+      <input name="nombre" type="text" />
+      <input name="asistencia" type="text" />
+      <input name="restricciones" type="text" />
+      <input name="bot" type="text" tabindex="-1" autocomplete="off" />
+    </form>
+    <form name="musica" data-netlify="true" netlify-honeypot="bot" style="display: none" aria-hidden="true">
+      <input name="nombre" type="text" />
+      <input name="cancion" type="text" />
+      <input name="bot" type="text" tabindex="-1" autocomplete="off" />
+    </form>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

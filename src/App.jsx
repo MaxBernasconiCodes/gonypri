@@ -16,9 +16,7 @@ const CONFIG = {
   horaFin: '5:00 hs',
   alias: 'priki.gonza.boda',
   titular: 'Gonzalo / Priki',
-  // 👇 REEMPLAZÁ con tus IDs de Formspree (https://formspree.io)
-  formspreeRSVP: 'https://formspree.io/f/YOUR_RSVP_ID',
-  formspreeMusica: 'https://formspree.io/f/YOUR_MUSIC_ID',
+  // Formularios enviados a Netlify Forms (nombres: rsvp, musica)
   audioURL: '/sparkle.mp3',
   imagenFondo: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&q=80&w=1920',
   imagenPortada: '/portada.jpeg',
@@ -213,16 +211,32 @@ const Modal = ({ onClose, title, subtitle, children }) => (
   </div>
 );
 
+// Envío a Netlify Forms (POST con form-name para que Netlify asocie el envío)
+async function submitNetlifyForm(formName, fields) {
+  const body = new URLSearchParams({ 'form-name': formName, ...fields });
+  const r = await fetch('/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+  return r.ok;
+}
+
 // ─── MODAL MÚSICA ─────────────────────────────────────────────────
 const MusicModal = ({ onClose }) => {
   const [status, setStatus] = useState('idle');
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('loading');
-    const data = new FormData(e.target);
+    const form = e.target;
+    const fields = {
+      nombre: form.nombre?.value?.trim() || '',
+      cancion: form.cancion?.value?.trim() || '',
+      bot: form.bot?.value || '',
+    };
     try {
-      const r = await fetch(CONFIG.formspreeMusica, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
-      setStatus(r.ok ? 'success' : 'error');
+      const ok = await submitNetlifyForm('musica', fields);
+      setStatus(ok ? 'success' : 'error');
     } catch { setStatus('error'); }
   };
   if (status === 'success') return (
@@ -235,6 +249,7 @@ const MusicModal = ({ onClose }) => {
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
         <input name="nombre" type="text" required placeholder="Tu nombre" className="form-input" />
         <input name="cancion" type="text" required placeholder="Canción y Artista (ej: Perfect — Ed Sheeran)" className="form-input" />
+        <input name="bot" type="text" tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} aria-hidden="true" />
         {status === 'error' && <p style={{ color: '#e05', fontSize: '0.82rem' }}>Hubo un error. Por favor intenta de nuevo.</p>}
         <button type="submit" className="btn-primary" style={{ marginTop: 4 }} disabled={status === 'loading'}>
           {status === 'loading' ? 'Enviando…' : 'Enviar sugerencia'}
@@ -251,10 +266,16 @@ const RSVPModal = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('loading');
-    const data = new FormData(e.target);
+    const form = e.target;
+    const fields = {
+      nombre: form.nombre?.value?.trim() || '',
+      asistencia: form.asistencia?.value || 'si',
+      restricciones: form.restricciones?.value?.trim() || '',
+      bot: form.bot?.value || '',
+    };
     try {
-      const r = await fetch(CONFIG.formspreeRSVP, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
-      if (r.ok) { setStatus('success'); if (asiste === 'si') lanzarConfetti(); }
+      const ok = await submitNetlifyForm('rsvp', fields);
+      if (ok) { setStatus('success'); if (asiste === 'si') lanzarConfetti(); }
       else setStatus('error');
     } catch { setStatus('error'); }
   };
@@ -276,6 +297,7 @@ const RSVPModal = ({ onClose }) => {
         {asiste === 'si' && (
           <input name="restricciones" type="text" placeholder="Restricciones alimentarias (opcional)" className="form-input" />
         )}
+        <input name="bot" type="text" tabIndex={-1} autoComplete="off" style={{ position: 'absolute', left: '-9999px' }} aria-hidden="true" />
         {status === 'error' && <p style={{ color: '#e05', fontSize: '0.82rem' }}>Hubo un error. Por favor intenta de nuevo.</p>}
         <button type="submit" className="btn-primary" style={{ marginTop: 4 }} disabled={status === 'loading'}>
           {status === 'loading' ? 'Enviando…' : 'Confirmar'}
