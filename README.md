@@ -76,14 +76,26 @@ Sin estas variables, los formularios siguen funcionando y las respuestas se ven 
 
 La sección **Sumá tus fotos al álbum** permite que los invitados suban fotos desde la misma página; las fotos se guardan en una carpeta de **Google Drive** vuestra usando la API de Drive (sin que el invitado tenga cuenta Google).
 
+### Importante: usar un Drive compartido (Shared Drive)
+
+Las **cuentas de servicio no tienen espacio propio** en Google Drive. Si creás una carpeta en **Mi unidad** y la compartís con la cuenta de servicio, Google puede devolver *"Service Accounts do not have storage quota"*. La solución es usar un **Drive compartido** (Shared Drive):
+
+1. En **Google Drive** (drive.google.com), en el menú lateral: **Nuevo** → **Drive compartido** (o *Shared drive*).
+2. Poné un nombre (ej. "Álbum Casamiento") y crealo.
+3. Dentro del Drive compartido, creá una **carpeta** (ej. "Fotos invitados") y abrila.
+4. Copiá el **ID de esa carpeta** de la URL:  
+   `https://drive.google.com/drive/folders/ESTE_ES_EL_ID`
+5. En el Drive compartido, **Compartir** (o gestionar miembros): agregá el **email de la cuenta de servicio** (el `client_email` del JSON, tipo `xxx@proyecto.iam.gserviceaccount.com`) con rol **Editor** o **Administrador de contenido**.
+
+Si no ves la opción "Drive compartido", puede que tu cuenta sea solo personal (Gmail). En ese caso probá desde una cuenta Google Workspace o buscá en la ayuda de Google cómo crear un Shared Drive con tu tipo de cuenta.
+
 ### Configuración en Google Cloud
 
 1. Entrá a [Google Cloud Console](https://console.cloud.google.com/) y creá un proyecto (o usá uno existente).
 2. Activá la **Google Drive API**: *APIs y servicios* → *Biblioteca* → buscá "Google Drive API" → *Activar*.
 3. Creá una **cuenta de servicio**: *APIs y servicios* → *Credenciales* → *Crear credenciales* → *Cuenta de servicio*. Dale un nombre (ej. "album-casamiento") y creala. Luego entrá a la cuenta de servicio → pestaña *Claves* → *Agregar clave* → *Crear clave nueva* → JSON. Se descarga un archivo JSON.
-4. Creá una **carpeta en Google Drive** (en vuestra cuenta personal o la que quieran usar para el álbum). Abrila y copiá el **ID de la carpeta** de la URL:  
-   `https://drive.google.com/drive/folders/ESTE_ES_EL_ID`
-5. Compartí esa carpeta con la **cuenta de servicio**: en Drive, clic derecho en la carpeta → *Compartir* → agregá el email de la cuenta de servicio (tipo `nombre@proyecto.iam.gserviceaccount.com`, está en el JSON como `client_email`) con permiso **Editor**.
+4. Usá la **carpeta dentro del Drive compartido** (paso 4 arriba) como `GDRIVE_FOLDER_ID`.
+5. Añadí la cuenta de servicio al Drive compartido como en el paso 5 arriba.
 
 ### Variables de entorno en Netlify
 
@@ -91,12 +103,12 @@ En *Site settings → Environment variables* agregá:
 
 | Variable | Descripción |
 |----------|-------------|
-| `GDRIVE_FOLDER_ID` | El ID de la carpeta de Drive donde se guardarán las fotos (el que copiaste en el paso 4). |
-| `GDRIVE_SERVICE_ACCOUNT_JSON` | El contenido **completo** del archivo JSON de la cuenta de servicio (podés pegarlo en una sola línea). |
+| `GDRIVE_FOLDER_ID` | El ID de la **carpeta dentro del Drive compartido** donde se guardarán las fotos. |
+| `GDRIVE_SERVICE_ACCOUNT_JSON` | El contenido **completo** del archivo JSON de la cuenta de servicio. Podés pegarlo con saltos de línea; el código los normaliza. |
 
 **Importante:** El JSON es sensible. No lo subas al repo; solo en variables de entorno de Netlify.
 
-Las fotos subidas aparecerán en esa carpeta con nombres tipo `NombreInvitado_1234567890.jpg`. Límite por foto: **5 MB** (límite de Netlify por request).
+Las fotos subidas aparecerán en esa carpeta con nombres tipo `Nombre_2026-03-10_14-30-45_1.jpg`. Límite por foto: **5 MB** (límite de Netlify por request).
 
 ---
 

@@ -170,14 +170,19 @@ exports.handler = async (event) => {
         body: stream,
       },
       fields: 'id, name',
+      supportsAllDrives: true,
     });
   } catch (err) {
     const message = err && (err.message || err.toString());
+    let userMessage = 'No se pudo subir la foto. Probá de nuevo más tarde.';
+    if (message && (message.includes('storage quota') || message.includes('do not have storage'))) {
+      userMessage = 'La carpeta debe estar en un Drive compartido (Shared Drive), no en Mi unidad. Revisá el README.';
+    }
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        error: 'No se pudo subir la foto. Probá de nuevo más tarde.',
+        error: userMessage,
         detail: message,
       }),
     };
