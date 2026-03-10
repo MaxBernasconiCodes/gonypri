@@ -72,19 +72,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    const forms = await listForms(siteId, netlifyToken);
-    const byName = {};
-    forms.forEach((f) => { byName[f.name] = f.id; });
-    const formId = byName[formName];
-    if (!formId) {
-      return {
-        statusCode: 404,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: `Formulario "${formName}" no encontrado` }),
-      };
-    }
-
-    const base = `${NETLIFY_API}/sites/${siteId}/forms/${formId}/submissions/${submissionId}`;
+    // La API de Netlify usa /submissions/{id} para spam, ham y delete (no bajo sites/forms)
+    const base = `${NETLIFY_API}/submissions/${submissionId}`;
     const headers = { Authorization: `Bearer ${netlifyToken}` };
 
     if (action === 'archive') {
