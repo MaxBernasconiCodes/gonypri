@@ -276,9 +276,15 @@ const AlbumUploadForm = () => {
           method: 'POST',
           body: formData,
         });
-        const data = await r.json();
+        let data = {};
+        try {
+          data = await r.json();
+        } catch (_) {}
         if (r.ok && data.ok) ok++;
-        else lastError = data.error || 'Error al subir';
+        else {
+          const msg = data.error || 'Error al subir';
+          lastError = data.detail ? `${msg} (${data.detail})` : msg;
+        }
       } catch {
         lastError = 'Error de conexión';
       }

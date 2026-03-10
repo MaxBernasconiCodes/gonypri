@@ -19,13 +19,18 @@ function parseMultipart(event) {
   return new Promise((resolve, reject) => {
     const fields = {};
     let body = event.body;
-    if (event.isBase64Encoded) {
-      body = Buffer.from(body, 'base64');
+    if (body == null) {
+      reject(new Error('No body'));
+      return;
     }
+    if (event.isBase64Encoded === true) {
+      body = Buffer.from(body, 'base64');
+    } else if (typeof body === 'string') {
+      body = Buffer.from(body, 'utf8');
+    }
+    const contentType = event.headers['content-type'] || event.headers['Content-Type'] || '';
     const busboy = Busboy({
-      headers: {
-        'content-type': event.headers['content-type'] || event.headers['Content-Type'] || '',
-      },
+      headers: { 'content-type': contentType },
     });
 
     busboy.on('file', (fieldname, file, info) => {
@@ -81,12 +86,13 @@ exports.handler = async (event) => {
 
   let credentials;
   try {
-    credentials = JSON.parse(credentialsJson);
+    const jsonStr = credentialsJson.replace(/\r?\n/g, ' ').trim();
+    credentials = JSON.parse(jsonStr);
   } catch (e) {
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'GDRIVE_SERVICE_ACCOUNT_JSON inválido' }),
+      body: JSON.stringify({ error: 'GDRIVE_SERVICE_ACCOUNT_JSON inválido', detail: e.message }),
     };
   }
 
@@ -166,10 +172,14 @@ exports.handler = async (event) => {
       fields: 'id, name',
     });
   } catch (err) {
+    const message = err && (err.message || err.toString());
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'No se pudo subir la foto. Probá de nuevo más tarde.' }),
+      body: JSON.stringify({
+        error: 'No se pudo subir la foto. Probá de nuevo más tarde.',
+        detail: message,
+      }),
     };
   }
 
