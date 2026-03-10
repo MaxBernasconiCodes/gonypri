@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Music2, Gift, CheckCircle, Heart, X, Volume2, VolumeX,
   CalendarHeart, ChevronLeft, ChevronRight, MapPin, Copy, Check,
-  Share2, ExternalLink
+  Share2, UsersRound, Shirt
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -547,8 +547,8 @@ export default function App() {
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', textAlign: 'center', marginBottom: '2.5rem' }}>Información Importante</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '2.5rem' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 56, height: 56, background: 'rgba(252,228,236,0.6)', border: '1px solid rgba(243,182,194,0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                  <span style={{ fontSize: '1.4rem' }}>👗</span>
+                <div style={{ width: 56, height: 56, background: 'rgba(252,228,236,0.6)', border: '1px solid rgba(243,182,194,0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#c4788a' }}>
+                  <Shirt size={28} strokeWidth={1.5} />
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: '#8b4552', marginBottom: '0.75rem' }}>Código de Vestimenta</h3>
                 <p style={{ color: '#6b5b5b', lineHeight: 1.8, fontSize: '0.93rem' }}>
@@ -557,8 +557,8 @@ export default function App() {
                 </p>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(243,182,194,0.5)', margin: '0 auto 1rem' }}>
-                  <img src="/baile.jpeg" alt="Solo adultos" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ width: 56, height: 56, background: 'rgba(252,228,236,0.6)', border: '1px solid rgba(243,182,194,0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: '#c4788a' }}>
+                  <UsersRound size={28} strokeWidth={1.5} />
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: '#8b4552', marginBottom: '0.75rem' }}>Celebración solo para Adultos</h3>
                 <p style={{ color: '#6b5b5b', lineHeight: 1.8, fontSize: '0.93rem' }}>

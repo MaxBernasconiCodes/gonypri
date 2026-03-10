@@ -7,19 +7,22 @@
  */
 const NETLIFY_API = 'https://api.netlify.com/api/v1';
 
-async function getFormSubmissions(siteId, formId, token) {
-  const r = await fetch(
-    `${NETLIFY_API}/sites/${siteId}/forms/${formId}/submissions`,
-    {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+async function getFormSubmissions(siteId, formId, token, includeArchived) {
+  const url = `${NETLIFY_API}/sites/${siteId}/forms/${formId}/submissions`;
+  const r = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
   if (!r.ok) return [];
   const data = await r.json();
-  return Array.isArray(data) ? data : [];
+  let list = Array.isArray(data) ? data : [];
+  // Netlify puede devolver solo "verified"; si pedimos archivadas y hay filtro, aquí se podría llamar también al listado de spam.
+  if (!includeArchived && list.some((s) => s.spam)) {
+    list = list.filter((s) => !s.spam);
+  }
+  return list;
 }
 
 async function listForms(siteId, token) {
@@ -36,10 +39,12 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
+  const qs = event.queryStringParameters || {};
   const authHeader = event.headers.authorization || event.headers.Authorization;
   const token = authHeader && authHeader.startsWith('Bearer ')
     ? authHeader.slice(7)
-    : event.queryStringParameters?.token || '';
+    : qs.token || '';
+  const includeArchived = qs.include_archived === '1';
 
   const adminSecret = process.env.ADMIN_SECRET;
   const siteId = process.env.NETLIFY_SITE_ID;
@@ -70,10 +75,10 @@ exports.handler = async (event) => {
 
     const [rsvp, musica] = await Promise.all([
       byName.rsvp
-        ? getFormSubmissions(siteId, byName.rsvp, netlifyToken)
+        ? getFormSubmissions(siteId, byName.rsvp, netlifyToken, includeArchived)
         : [],
       byName.musica
-        ? getFormSubmissions(siteId, byName.musica, netlifyToken)
+        ? getFormSubmissions(siteId, byName.musica, netlifyToken, includeArchived)
         : [],
     ]);
 

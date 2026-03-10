@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LogOut, Music2, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { LogOut, Music2, CheckCircle, Loader2, ArrowLeft, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 
 const STORAGE_KEY = 'gonypri_admin_token';
 
@@ -28,6 +28,8 @@ export default function Admin() {
   const [musica, setMusica] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null); // 'rsvp-123' | 'musica-456'
+  const [includeArchived, setIncludeArchived] = useState(false);
 
   const setToken = useCallback((t) => {
     if (t) sessionStorage.setItem(STORAGE_KEY, t);
@@ -35,11 +37,14 @@ export default function Admin() {
     setTokenState(t);
   }, []);
 
-  const fetchSubmissions = useCallback(async (authToken) => {
+  const fetchSubmissions = useCallback(async (authToken, includeArchivedParam) => {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch('/.netlify/functions/get-form-submissions', {
+      const url = includeArchivedParam
+        ? '/.netlify/functions/get-form-submissions?include_archived=1'
+        : '/.netlify/functions/get-form-submissions';
+      const r = await fetch(url, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await r.json();
@@ -56,9 +61,40 @@ export default function Admin() {
     }
   }, []);
 
+  const runAction = useCallback(async (formName, submissionId, action) => {
+    const key = `${formName}-${submissionId}`;
+    setActionLoading(key);
+    setError(null);
+    try {
+      const r = await fetch('/.netlify/functions/form-submission-action', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, formName, submissionId }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setError(data.error || 'Error al ejecutar la acción');
+        return;
+      }
+      await fetchSubmissions(token, includeArchived);
+    } catch (e) {
+      setError(e.message || 'Error de conexión');
+    } finally {
+      setActionLoading(null);
+    }
+  }, [token, includeArchived, fetchSubmissions]);
+
+  const handleDelete = useCallback((formName, submissionId, label) => {
+    if (!window.confirm(`¿Eliminar de forma permanente "${label}"? Esta acción no se puede deshacer.`)) return;
+    runAction(formName, submissionId, 'delete');
+  }, [runAction]);
+
   useEffect(() => {
-    if (token) fetchSubmissions(token);
-  }, [token, fetchSubmissions]);
+    if (token) fetchSubmissions(token, includeArchived);
+  }, [token, includeArchived, fetchSubmissions]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -66,7 +102,7 @@ export default function Admin() {
     if (!t) return;
     setToken(t);
     setInputPassword('');
-    fetchSubmissions(t);
+    fetchSubmissions(t, includeArchived);
   };
 
   const handleLogout = () => {
@@ -98,6 +134,17 @@ export default function Admin() {
     padding: '0.75rem 1rem',
     borderBottom: '1px solid rgba(243,182,194,0.25)',
     color: '#5a4242',
+  };
+  const btnIconStyle = {
+    padding: '0.4rem',
+    background: 'rgba(252,228,236,0.5)',
+    border: '1px solid rgba(243,182,194,0.5)',
+    borderRadius: 8,
+    color: '#8b4552',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   };
 
   // Pantalla de login
@@ -254,6 +301,20 @@ export default function Admin() {
           </p>
         )}
 
+        <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '0.9rem', color: '#5a4242' }}>
+            <input
+              type="checkbox"
+              checked={includeArchived}
+              onChange={(e) => setIncludeArchived(e.target.checked)}
+            />
+            Incluir archivadas
+          </label>
+          <span style={{ fontSize: '0.8rem', color: '#9d8585' }}>
+            Archivar no borra: oculta la respuesta y podés restaurarla después.
+          </span>
+        </div>
+
         {!loading && (
           <>
             <section style={{ marginBottom: '2.5rem' }}>
@@ -279,17 +340,63 @@ export default function Admin() {
                         <th style={thStyle}>Asistencia</th>
                         <th style={thStyle}>Restricciones</th>
                         <th style={thStyle}>Fecha</th>
+                        <th style={{ ...thStyle, width: 140 }}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rsvp.map((s) => (
-                        <tr key={s.id}>
-                          <td style={tdStyle}>{s.data?.nombre ?? '—'}</td>
-                          <td style={tdStyle}>{s.data?.asistencia === 'si' ? '✅ Sí' : '❌ No'}</td>
-                          <td style={tdStyle}>{s.data?.restricciones || '—'}</td>
-                          <td style={tdStyle}>{formatDate(s.created_at)}</td>
-                        </tr>
-                      ))}
+                      {rsvp.map((s) => {
+                        const key = `rsvp-${s.id}`;
+                        const loadingRow = actionLoading === key;
+                        const isArchived = s.spam === true;
+                        const label = s.data?.nombre ?? 'esta respuesta';
+                        return (
+                          <tr key={s.id} style={{ opacity: isArchived ? 0.75 : 1 }}>
+                            <td style={tdStyle}>
+                              {s.data?.nombre ?? '—'}
+                              {isArchived && (
+                                <span style={{ marginLeft: 8, fontSize: '0.7rem', color: '#9d8585', fontStyle: 'italic' }}>archivada</span>
+                              )}
+                            </td>
+                            <td style={tdStyle}>{s.data?.asistencia === 'si' ? '✅ Sí' : '❌ No'}</td>
+                            <td style={tdStyle}>{s.data?.restricciones || '—'}</td>
+                            <td style={tdStyle}>{formatDate(s.created_at)}</td>
+                            <td style={tdStyle}>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {isArchived ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => runAction('rsvp', s.id, 'restore')}
+                                    disabled={loadingRow}
+                                    title="Restaurar"
+                                    style={btnIconStyle}
+                                  >
+                                    {loadingRow ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <ArchiveRestore size={14} />}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => runAction('rsvp', s.id, 'archive')}
+                                    disabled={loadingRow}
+                                    title="Archivar (ocultar sin borrar)"
+                                    style={btnIconStyle}
+                                  >
+                                    {loadingRow ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Archive size={14} />}
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete('rsvp', s.id, label)}
+                                  disabled={loadingRow}
+                                  title="Eliminar de forma permanente"
+                                  style={{ ...btnIconStyle, color: '#c53030' }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -318,16 +425,62 @@ export default function Admin() {
                         <th style={thStyle}>Nombre</th>
                         <th style={thStyle}>Canción</th>
                         <th style={thStyle}>Fecha</th>
+                        <th style={{ ...thStyle, width: 140 }}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {musica.map((s) => (
-                        <tr key={s.id}>
-                          <td style={tdStyle}>{s.data?.nombre ?? '—'}</td>
-                          <td style={tdStyle}>{s.data?.cancion ?? '—'}</td>
-                          <td style={tdStyle}>{formatDate(s.created_at)}</td>
-                        </tr>
-                      ))}
+                      {musica.map((s) => {
+                        const key = `musica-${s.id}`;
+                        const loadingRow = actionLoading === key;
+                        const isArchived = s.spam === true;
+                        const label = s.data?.cancion ? `${s.data?.nombre}: ${s.data.cancion}` : (s.data?.nombre ?? 'esta sugerencia');
+                        return (
+                          <tr key={s.id} style={{ opacity: isArchived ? 0.75 : 1 }}>
+                            <td style={tdStyle}>
+                              {s.data?.nombre ?? '—'}
+                              {isArchived && (
+                                <span style={{ marginLeft: 8, fontSize: '0.7rem', color: '#9d8585', fontStyle: 'italic' }}>archivada</span>
+                              )}
+                            </td>
+                            <td style={tdStyle}>{s.data?.cancion ?? '—'}</td>
+                            <td style={tdStyle}>{formatDate(s.created_at)}</td>
+                            <td style={tdStyle}>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {isArchived ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => runAction('musica', s.id, 'restore')}
+                                    disabled={loadingRow}
+                                    title="Restaurar"
+                                    style={btnIconStyle}
+                                  >
+                                    {loadingRow ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <ArchiveRestore size={14} />}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => runAction('musica', s.id, 'archive')}
+                                    disabled={loadingRow}
+                                    title="Archivar (ocultar sin borrar)"
+                                    style={btnIconStyle}
+                                  >
+                                    {loadingRow ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Archive size={14} />}
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete('musica', s.id, label)}
+                                  disabled={loadingRow}
+                                  title="Eliminar de forma permanente"
+                                  style={{ ...btnIconStyle, color: '#c53030' }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
