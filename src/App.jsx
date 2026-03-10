@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Gift, Heart, X, Volume2, VolumeX,
+  Gift, Heart, X, Volume2, VolumeX, Music2,
   CalendarHeart, ChevronLeft, ChevronRight, MapPin, Copy, Check,
   Share2, UsersRound, Shirt, Images, ImagePlus, CheckCircle
 } from 'lucide-react';
@@ -594,6 +594,7 @@ export default function App() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showRSVP, setShowRSVP] = useState(false);
+  const [showMusic, setShowMusic] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const audioRef = useRef(null);
   const countDown = useCountdown(CONFIG.fecha);
@@ -851,7 +852,25 @@ export default function App() {
           </section>
         </RevealOnScroll>
 
-        {/* 5 · MÚSICA — sección oculta */}
+        {/* 5 · MÚSICA — sugerir canción */}
+        <RevealOnScroll delay={50}>
+          <section style={{ background: 'linear-gradient(135deg,#8b4552 0%,#6e3741 100%)', borderRadius: '2.5rem', padding: '3rem', textAlign: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 16px 60px rgba(139,69,82,0.35)' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 280, height: 280, background: 'rgba(255,255,255,0.04)', borderRadius: '50%', transform: 'translate(30%,-30%)' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 200, height: 200, background: 'rgba(255,255,255,0.04)', borderRadius: '50%', transform: 'translate(-30%,30%)' }} />
+            <div className="animate-float-music" style={{ display: 'inline-block', position: 'relative', zIndex: 1 }}>
+              <Music2 size={56} strokeWidth={1.3} color="rgba(252,228,236,0.9)" />
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#fff', marginBottom: '0.9rem', position: 'relative', zIndex: 1 }}>La pista es de todos</h2>
+            <p style={{ color: 'rgba(252,228,236,0.8)', marginBottom: '2rem', maxWidth: 420, margin: '0 auto 2rem', lineHeight: 1.75, position: 'relative', zIndex: 1, fontSize: '0.97rem' }}>
+              ¿Qué canción no puede faltar para que bailemos todos?
+            </p>
+            <button onClick={() => setShowMusic(true)} style={{ position: 'relative', zIndex: 1, padding: '0.9rem 2.5rem', background: '#fff', color: '#8b4552', border: 'none', borderRadius: 9999, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.2)', transition: 'transform 0.15s, box-shadow 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 12px 36px rgba(0,0,0,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 8px 28px rgba(0,0,0,0.2)'; }}>
+              🎵 Sugerir canción
+            </button>
+          </section>
+        </RevealOnScroll>
 
         {/* 6 · ACOMPÁÑANOS: Asistencia (solo antes/el día) + Regalos */}
         <RevealOnScroll delay={50}>
@@ -964,6 +983,7 @@ export default function App() {
 
       {/* ── MODALES ── */}
       {showRSVP && <RSVPModal onClose={() => setShowRSVP(false)} />}
+      {showMusic && <MusicModal onClose={() => setShowMusic(false)} />}
 
       {/* ── ESTILOS ADICIONALES ── */}
       <style>{`
