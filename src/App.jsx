@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Music2, Gift, CheckCircle, Heart, X, Volume2, VolumeX,
   CalendarHeart, ChevronLeft, ChevronRight, MapPin, Copy, Check,
-  Share2, UsersRound, Shirt
+  Share2, ExternalLink, UsersRound, Shirt, Images, ImagePlus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -173,6 +173,257 @@ const PhotoCarousel = () => {
             style={{ width: 8, height: 8, borderRadius: '50%', border: 'none', cursor: 'pointer', background: i === current ? '#fff' : 'rgba(255,255,255,0.45)', transform: i === current ? 'scale(1.3)' : 'scale(1)', transition: 'all 0.3s' }} />
         ))}
       </div>
+    </div>
+  );
+};
+
+// Tipos MIME permitidos (solo imágenes, sin video)
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB por foto
+
+function isImageFile(file) {
+  const type = (file.type || '').toLowerCase();
+  return ALLOWED_IMAGE_TYPES.some((t) => type === t || type.startsWith('image/'));
+}
+
+// Miniatura con preview y botón quitar (revoca object URL al desmontar)
+const PhotoPreviewThumb = ({ file, onRemove }) => {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  return (
+    <div style={{ position: 'relative', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', background: 'rgba(252,228,236,0.4)', border: '1px solid rgba(243,182,194,0.5)' }}>
+      {url && (
+        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Quitar foto"
+        style={{
+          position: 'absolute',
+          top: 6,
+          right: 6,
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          border: 'none',
+          background: 'rgba(139,69,82,0.9)',
+          color: '#fff',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        }}
+      >
+        <X size={14} strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+};
+
+// ─── SUBIDA DE FOTOS AL ÁLBUM (Google Drive) ───────────────────────
+const AlbumUploadForm = () => {
+  const [nombre, setNombre] = useState('');
+  const [files, setFiles] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const selected = Array.from(e.target.files || []);
+    const valid = selected.filter((f) => isImageFile(f) && f.size <= MAX_FILE_SIZE);
+    setFiles((prev) => (prev.length ? [...prev, ...valid] : valid));
+    setStatus('idle');
+    setMessage('');
+    e.target.value = '';
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setStatus('idle');
+    setMessage('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (files.length === 0) {
+      setStatus('error');
+      setMessage('Elegí al menos una foto (solo imágenes, máx. 5 MB cada una).');
+      return;
+    }
+    setStatus('loading');
+    setMessage('');
+    setProgress({ current: 0, total: files.length });
+    const name = nombre.trim() || 'Invitado';
+    const batchTime = Date.now();
+    let ok = 0;
+    let lastError = '';
+    for (let i = 0; i < files.length; i++) {
+      setProgress({ current: i + 1, total: files.length });
+      const formData = new FormData();
+      formData.append('nombre', name);
+      formData.append('foto', files[i]);
+      formData.append('batchTime', String(batchTime));
+      formData.append('index', String(i + 1));
+      try {
+        const r = await fetch('/.netlify/functions/upload-photo', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await r.json();
+        if (r.ok && data.ok) ok++;
+        else lastError = data.error || 'Error al subir';
+      } catch {
+        lastError = 'Error de conexión';
+      }
+    }
+    setProgress({ current: 0, total: 0 });
+    if (ok === files.length) {
+      setStatus('success');
+      setMessage(ok === 1 ? '¡Foto subida!' : `¡${ok} fotos subidas! Gracias por compartirlas.`);
+      setFiles([]);
+      e.target.reset();
+    } else if (ok > 0) {
+      setStatus('success');
+      setMessage(`Se subieron ${ok} de ${files.length} fotos. ${lastError ? lastError : ''}`);
+      setFiles([]);
+      e.target.reset();
+    } else {
+      setStatus('error');
+      setMessage(lastError || 'No se pudieron subir las fotos. Probá de nuevo.');
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 420, margin: '0 auto' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
+        <input
+          name="nombre"
+          type="text"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Tu nombre"
+          className="form-input"
+        />
+
+        <div>
+          <input
+            ref={fileInputRef}
+            id="album-file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/heic"
+            multiple
+            onChange={handleFileChange}
+            style={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              padding: 0,
+              margin: -1,
+              overflow: 'hidden',
+              clip: 'rect(0,0,0,0)',
+              border: 0,
+              opacity: 0,
+            }}
+          />
+          <label
+            htmlFor="album-file-input"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              padding: '1rem 1.25rem',
+              background: 'rgba(252,228,236,0.5)',
+              border: '2px dashed rgba(243,182,194,0.7)',
+              borderRadius: 16,
+              cursor: 'pointer',
+              color: '#8b4552',
+              fontFamily: 'var(--font-sans)',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'background 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(252,228,236,0.8)';
+              e.currentTarget.style.borderColor = 'rgba(243,182,194,1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(252,228,236,0.5)';
+              e.currentTarget.style.borderColor = 'rgba(243,182,194,0.7)';
+            }}
+          >
+            <Images size={20} strokeWidth={1.8} />
+            Elegir fotos
+          </label>
+          <p style={{ fontSize: '0.75rem', color: '#9d8585', marginTop: 6 }}>
+            Solo imágenes · máx. 5 MB cada una
+          </p>
+
+          {files.length > 0 && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16 }}>
+                {files.map((file, i) => (
+                  <PhotoPreviewThumb key={`${file.name}-${i}`} file={file} onRemove={() => removeFile(i)} />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginTop: 12,
+                  padding: '0.5rem 1rem',
+                  background: 'none',
+                  border: '1px solid rgba(139,69,82,0.5)',
+                  borderRadius: 9999,
+                  color: '#8b4552',
+                  fontSize: '0.85rem',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <ImagePlus size={16} /> Agregar más fotos
+              </button>
+            </>
+          )}
+        </div>
+
+        {status === 'loading' && progress.total > 0 && (
+          <p style={{ color: '#8b4552', fontSize: '0.9rem' }}>
+            Subiendo {progress.current} de {progress.total}…
+          </p>
+        )}
+        {status === 'success' && <p style={{ color: '#16a34a', fontSize: '0.9rem' }}>{message}</p>}
+        {status === 'error' && <p style={{ color: '#c53030', fontSize: '0.9rem' }}>{message}</p>}
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={status === 'loading' || files.length === 0}
+          style={
+            status === 'loading' || files.length === 0
+              ? {
+                  background: '#b0a09f',
+                  color: '#fff',
+                  cursor: 'not-allowed',
+                  opacity: 0.9,
+                  pointerEvents: 'none',
+                }
+              : undefined
+          }
+        >
+          {status === 'loading' ? 'Subiendo…' : files.length === 0 ? 'Subir fotos' : files.length === 1 ? 'Subir 1 foto' : `Subir ${files.length} fotos`}
+        </button>
+      </form>
     </div>
   );
 };
@@ -638,6 +889,20 @@ export default function App() {
           <section id="historia" className="card">
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', textAlign: 'center', marginBottom: '2rem' }}>Nuestra Historia</h2>
             <PhotoCarousel />
+          </section>
+        </RevealOnScroll>
+
+        {/* 8 · ÁLBUM DE FOTOS (subida a Google Drive) */}
+        <RevealOnScroll delay={50}>
+          <section id="album-fotos" className="card" style={{ textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, background: 'rgba(252,228,236,0.6)', border: '1px solid rgba(243,182,194,0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.2rem', color: '#c4788a' }}>
+              <Images size={28} strokeWidth={1.5} />
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', marginBottom: '0.9rem' }}>Sumá tus fotos al álbum</h2>
+            <p style={{ color: '#6b5b5b', maxWidth: 520, margin: '0 auto 1.5rem', lineHeight: 1.75, fontSize: '0.95rem' }}>
+              ¿Tenés fotos de {CONFIG.novios.ella} y {CONFIG.novios.el} que quieras compartir? Subilas acá y se guardarán en nuestro álbum de Google Drive.
+            </p>
+            <AlbumUploadForm />
           </section>
         </RevealOnScroll>
 

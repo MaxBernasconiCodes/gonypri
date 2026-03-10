@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LogOut, Music2, CheckCircle, Loader2, ArrowLeft, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { LogOut, Music2, CheckCircle, Loader2, ArrowLeft, Archive, ArchiveRestore, Trash2, Search, ChevronUp, ChevronDown } from 'lucide-react';
 
 const STORAGE_KEY = 'gonypri_admin_token';
 
@@ -30,6 +30,9 @@ export default function Admin() {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null); // 'rsvp-123' | 'musica-456'
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortRsvp, setSortRsvp] = useState({ column: null, dir: 'asc' });
+  const [sortMusica, setSortMusica] = useState({ column: null, dir: 'asc' });
 
   const setToken = useCallback((t) => {
     if (t) sessionStorage.setItem(STORAGE_KEY, t);
@@ -147,7 +150,74 @@ export default function Admin() {
     justifyContent: 'center',
   };
 
-  // Pantalla de login
+  // Búsqueda por nombre (incluye texto, no coincidencia exacta)
+  const q = searchQuery.trim().toLowerCase();
+  const filterByName = (list, getName) =>
+    q ? list.filter((s) => (getName(s) ?? '').toLowerCase().includes(q)) : list;
+
+  const filteredRsvp = filterByName(rsvp, (s) => s.data?.nombre);
+  const filteredMusica = filterByName(musica, (s) => s.data?.nombre);
+
+  // Ordenar
+  const sortList = (list, column, dir, getValue) => {
+    if (!column || !list.length) return list;
+    const mult = dir === 'asc' ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const va = getValue(a);
+      const vb = getValue(b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === 'string' && typeof vb === 'string') return mult * (va.localeCompare(vb, 'es') || 0);
+      if (va instanceof Date && vb instanceof Date) return mult * (va.getTime() - vb.getTime());
+      if (typeof va === 'number' && typeof vb === 'number') return mult * (va - vb);
+      return mult * String(va).localeCompare(String(vb), 'es');
+    });
+  };
+
+  const getRsvpValue = (s, col) => {
+    if (col === 'nombre') return s.data?.nombre ?? '';
+    if (col === 'asistencia') return s.data?.asistencia === 'si' ? 'Sí' : 'No';
+    if (col === 'restricciones') return s.data?.restricciones ?? '';
+    if (col === 'fecha') return s.created_at ? new Date(s.created_at).getTime() : 0;
+    return '';
+  };
+  const getMusicaValue = (s, col) => {
+    if (col === 'nombre') return s.data?.nombre ?? '';
+    if (col === 'cancion') return s.data?.cancion ?? '';
+    if (col === 'fecha') return s.created_at ? new Date(s.created_at).getTime() : 0;
+    return '';
+  };
+
+  const sortedRsvp = sortList(
+    filteredRsvp,
+    sortRsvp.column,
+    sortRsvp.dir,
+    (s) => getRsvpValue(s, sortRsvp.column)
+  );
+  const sortedMusica = sortList(
+    filteredMusica,
+    sortMusica.column,
+    sortMusica.dir,
+    (s) => getMusicaValue(s, sortMusica.column)
+  );
+
+  const handleSortRsvp = (column) => {
+    setSortRsvp((prev) => ({
+      column,
+      dir: prev.column === column && prev.dir === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+  const handleSortMusica = (column) => {
+    setSortMusica((prev) => ({
+      column,
+      dir: prev.column === column && prev.dir === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const thSortableStyle = { ...thStyle, cursor: 'pointer', userSelect: 'none' };
+  const SortIcon = ({ column, currentColumn, dir }) =>
+    currentColumn === column ? (dir === 'asc' ? <ChevronUp size={14} style={{ marginLeft: 4, verticalAlign: 'middle' }} /> : <ChevronDown size={14} style={{ marginLeft: 4, verticalAlign: 'middle' }} />) : null;
   if (!token) {
     return (
       <div style={{
@@ -315,6 +385,28 @@ export default function Admin() {
           </span>
         </div>
 
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', color: '#5a4242', marginBottom: 6, fontFamily: 'var(--font-sans)' }}>
+            Buscar por nombre
+          </label>
+          <div style={{ position: 'relative', maxWidth: 320 }}>
+            <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9d8585' }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Texto incluido en el nombre..."
+              className="form-input"
+              style={{ paddingLeft: 40 }}
+            />
+          </div>
+          {q && (
+            <p style={{ fontSize: '0.8rem', color: '#8b4552', marginTop: 6 }}>
+              Mostrando {sortedRsvp.length} de {rsvp.length} asistencias, {sortedMusica.length} de {musica.length} canciones
+            </p>
+          )}
+        </div>
+
         {!loading && (
           <>
             <section style={{ marginBottom: '2.5rem' }}>
@@ -327,24 +419,24 @@ export default function Admin() {
                 alignItems: 'center',
                 gap: 8,
               }}>
-                <CheckCircle size={22} /> Confirmaciones de asistencia ({rsvp.length})
+                <CheckCircle size={22} /> Confirmaciones de asistencia ({sortedRsvp.length}{rsvp.length !== sortedRsvp.length ? ` de ${rsvp.length}` : ''})
               </h2>
               <div style={{ overflowX: 'auto' }}>
-                {rsvp.length === 0 ? (
-                  <p style={{ color: '#9d8585', fontStyle: 'italic' }}>Aún no hay respuestas.</p>
+                {sortedRsvp.length === 0 ? (
+                  <p style={{ color: '#9d8585', fontStyle: 'italic' }}>{q ? 'Ningún nombre coincide con la búsqueda.' : 'Aún no hay respuestas.'}</p>
                 ) : (
                   <table style={tableStyle}>
                     <thead>
                       <tr>
-                        <th style={thStyle}>Nombre</th>
-                        <th style={thStyle}>Asistencia</th>
-                        <th style={thStyle}>Restricciones</th>
-                        <th style={thStyle}>Fecha</th>
+                        <th style={thSortableStyle} onClick={() => handleSortRsvp('nombre')}>Nombre <SortIcon column="nombre" currentColumn={sortRsvp.column} dir={sortRsvp.dir} /></th>
+                        <th style={thSortableStyle} onClick={() => handleSortRsvp('asistencia')}>Asistencia <SortIcon column="asistencia" currentColumn={sortRsvp.column} dir={sortRsvp.dir} /></th>
+                        <th style={thSortableStyle} onClick={() => handleSortRsvp('restricciones')}>Restricciones <SortIcon column="restricciones" currentColumn={sortRsvp.column} dir={sortRsvp.dir} /></th>
+                        <th style={thSortableStyle} onClick={() => handleSortRsvp('fecha')}>Fecha <SortIcon column="fecha" currentColumn={sortRsvp.column} dir={sortRsvp.dir} /></th>
                         <th style={{ ...thStyle, width: 140 }}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rsvp.map((s) => {
+                      {sortedRsvp.map((s) => {
                         const key = `rsvp-${s.id}`;
                         const loadingRow = actionLoading === key;
                         const isArchived = s.spam === true;
@@ -413,23 +505,23 @@ export default function Admin() {
                 alignItems: 'center',
                 gap: 8,
               }}>
-                <Music2 size={22} /> Sugerencias de canciones ({musica.length})
+                <Music2 size={22} /> Sugerencias de canciones ({sortedMusica.length}{musica.length !== sortedMusica.length ? ` de ${musica.length}` : ''})
               </h2>
               <div style={{ overflowX: 'auto' }}>
-                {musica.length === 0 ? (
-                  <p style={{ color: '#9d8585', fontStyle: 'italic' }}>Aún no hay sugerencias.</p>
+                {sortedMusica.length === 0 ? (
+                  <p style={{ color: '#9d8585', fontStyle: 'italic' }}>{q ? 'Ningún nombre coincide con la búsqueda.' : 'Aún no hay sugerencias.'}</p>
                 ) : (
                   <table style={tableStyle}>
                     <thead>
                       <tr>
-                        <th style={thStyle}>Nombre</th>
-                        <th style={thStyle}>Canción</th>
-                        <th style={thStyle}>Fecha</th>
+                        <th style={thSortableStyle} onClick={() => handleSortMusica('nombre')}>Nombre <SortIcon column="nombre" currentColumn={sortMusica.column} dir={sortMusica.dir} /></th>
+                        <th style={thSortableStyle} onClick={() => handleSortMusica('cancion')}>Canción <SortIcon column="cancion" currentColumn={sortMusica.column} dir={sortMusica.dir} /></th>
+                        <th style={thSortableStyle} onClick={() => handleSortMusica('fecha')}>Fecha <SortIcon column="fecha" currentColumn={sortMusica.column} dir={sortMusica.dir} /></th>
                         <th style={{ ...thStyle, width: 140 }}>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {musica.map((s) => {
+                      {sortedMusica.map((s) => {
                         const key = `musica-${s.id}`;
                         const loadingRow = actionLoading === key;
                         const isArchived = s.spam === true;

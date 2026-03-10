@@ -72,6 +72,34 @@ Sin estas variables, los formularios siguen funcionando y las respuestas se ven 
 
 ---
 
+## 📷 Álbum de fotos (Google Drive)
+
+La sección **Sumá tus fotos al álbum** permite que los invitados suban fotos desde la misma página; las fotos se guardan en una carpeta de **Google Drive** vuestra usando la API de Drive (sin que el invitado tenga cuenta Google).
+
+### Configuración en Google Cloud
+
+1. Entrá a [Google Cloud Console](https://console.cloud.google.com/) y creá un proyecto (o usá uno existente).
+2. Activá la **Google Drive API**: *APIs y servicios* → *Biblioteca* → buscá "Google Drive API" → *Activar*.
+3. Creá una **cuenta de servicio**: *APIs y servicios* → *Credenciales* → *Crear credenciales* → *Cuenta de servicio*. Dale un nombre (ej. "album-casamiento") y creala. Luego entrá a la cuenta de servicio → pestaña *Claves* → *Agregar clave* → *Crear clave nueva* → JSON. Se descarga un archivo JSON.
+4. Creá una **carpeta en Google Drive** (en vuestra cuenta personal o la que quieran usar para el álbum). Abrila y copiá el **ID de la carpeta** de la URL:  
+   `https://drive.google.com/drive/folders/ESTE_ES_EL_ID`
+5. Compartí esa carpeta con la **cuenta de servicio**: en Drive, clic derecho en la carpeta → *Compartir* → agregá el email de la cuenta de servicio (tipo `nombre@proyecto.iam.gserviceaccount.com`, está en el JSON como `client_email`) con permiso **Editor**.
+
+### Variables de entorno en Netlify
+
+En *Site settings → Environment variables* agregá:
+
+| Variable | Descripción |
+|----------|-------------|
+| `GDRIVE_FOLDER_ID` | El ID de la carpeta de Drive donde se guardarán las fotos (el que copiaste en el paso 4). |
+| `GDRIVE_SERVICE_ACCOUNT_JSON` | El contenido **completo** del archivo JSON de la cuenta de servicio (podés pegarlo en una sola línea). |
+
+**Importante:** El JSON es sensible. No lo subas al repo; solo en variables de entorno de Netlify.
+
+Las fotos subidas aparecerán en esa carpeta con nombres tipo `NombreInvitado_1234567890.jpg`. Límite por foto: **5 MB** (límite de Netlify por request).
+
+---
+
 ## 🎵 Música de fondo
 
 Reemplazá `audioURL` en `src/App.jsx` con un enlace a tu canción (Dropbox, Google Drive, etc.) o con la ruta a un archivo local en `public/`.
