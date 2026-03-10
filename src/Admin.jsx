@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { LogOut, Music2, CheckCircle, Loader2, ArrowLeft, Archive, ArchiveRestore, Trash2, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { LogOut, Music2, CheckCircle, Loader2, ArrowLeft, Archive, ArchiveRestore, Trash2, Search, ChevronUp, ChevronDown, FileSpreadsheet } from 'lucide-react';
 
 const STORAGE_KEY = 'gonypri_admin_token';
 
@@ -17,6 +17,49 @@ function formatDate(iso) {
   } catch {
     return iso;
   }
+}
+
+function formatDateForExport(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+function escapeCsvCell(str) {
+  if (str == null) return '';
+  const s = String(str);
+  if (/[",;\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportRsvpToCsv(list) {
+  const sep = ';';
+  const headers = ['Nombre', 'Asistencia', 'Restricciones alimentarias', 'Fecha de respuesta', 'Archivada'];
+  const rows = list.map((s) => [
+    escapeCsvCell(s.data?.nombre ?? ''),
+    s.data?.asistencia === 'si' ? 'Sí' : 'No',
+    escapeCsvCell(s.data?.restricciones ?? ''),
+    formatDateForExport(s.created_at),
+    s.spam === true || s.state === 'spam' ? 'Sí' : 'No',
+  ]);
+  const csv = [headers.join(sep), ...rows.map((r) => r.join(sep))].join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `invitados-rsvp-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function Admin() {
@@ -410,17 +453,41 @@ export default function Admin() {
         {!loading && (
           <>
             <section style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{
-                fontFamily: 'var(--font-serif)',
-                fontSize: '1.35rem',
-                color: '#8b4552',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}>
-                <CheckCircle size={22} /> Confirmaciones de asistencia ({sortedRsvp.length}{rsvp.length !== sortedRsvp.length ? ` de ${rsvp.length}` : ''})
-              </h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+                <h2 style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '1.35rem',
+                  color: '#8b4552',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                  <CheckCircle size={22} /> Confirmaciones de asistencia ({sortedRsvp.length}{rsvp.length !== sortedRsvp.length ? ` de ${rsvp.length}` : ''})
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => exportRsvpToCsv(sortedRsvp)}
+                  disabled={sortedRsvp.length === 0}
+                  title="Descarga el listado actual (con el filtro y orden aplicados) en CSV para abrir en Excel"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '0.5rem 1rem',
+                    background: sortedRsvp.length === 0 ? '#e8e4e4' : 'rgba(252,228,236,0.8)',
+                    border: `1px solid ${sortedRsvp.length === 0 ? '#ccc' : 'rgba(243,182,194,0.7)'}`,
+                    borderRadius: 10,
+                    color: sortedRsvp.length === 0 ? '#9d8585' : '#8b4552',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: sortedRsvp.length === 0 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <FileSpreadsheet size={18} /> Exportar a Excel
+                </button>
+              </div>
               <div style={{ overflowX: 'auto' }}>
                 {sortedRsvp.length === 0 ? (
                   <p style={{ color: '#9d8585', fontStyle: 'italic' }}>{q ? 'Ningún nombre coincide con la búsqueda.' : 'Aún no hay respuestas.'}</p>
