@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Music2, Gift, CheckCircle, Heart, X, Volume2, VolumeX,
+  Gift, Heart, X, Volume2, VolumeX,
   CalendarHeart, ChevronLeft, ChevronRight, MapPin, Copy, Check,
-  Share2, ExternalLink, UsersRound, Shirt, Images, ImagePlus
+  Share2, UsersRound, Shirt, Images, ImagePlus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────
 const CONFIG = {
   novios: { ella: 'Priki', el: 'Gonza' },
-  fecha: '2026-07-25T21:00:00',
+  fecha: '2026-03-08T21:00:00',
   fechaLegible: '25 de Julio de 2026',
   lugar: 'Salón Villa Verde',
   ubicacionURL: 'https://maps.app.goo.gl/XjH4XeYsBGjYK7d59',
@@ -451,6 +451,25 @@ function useCountdown(targetDate) {
   return t;
 }
 
+// Estado respecto a la fecha del casamiento: 'before' | 'wedding-day' | 'after'
+function useWeddingDateState(targetDate) {
+  const getState = useCallback(() => {
+    const wd = new Date(targetDate);
+    const today = new Date();
+    const wdDay = new Date(wd.getFullYear(), wd.getMonth(), wd.getDate()).getTime();
+    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    if (todayDay > wdDay) return 'after';
+    if (todayDay === wdDay) return 'wedding-day';
+    return 'before';
+  }, [targetDate]);
+  const [state, setState] = useState(getState);
+  useEffect(() => {
+    const i = setInterval(() => setState(getState()), 60000); // actualiza cada minuto
+    return () => clearInterval(i);
+  }, [getState]);
+  return state;
+}
+
 // ─── MODAL BASE ───────────────────────────────────────────────────
 const Modal = ({ onClose, title, subtitle, children }) => (
   <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(30,15,15,0.65)', backdropFilter: 'blur(10px)' }}
@@ -593,14 +612,11 @@ const ChurchIcon = () => (
 export default function App() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showMusic, setShowMusic] = useState(false);
-  const [showRSVP, setShowRSVP] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const audioRef = useRef(null);
   const countDown = useCountdown(CONFIG.fecha);
-
-  // Si la URL tiene inv=fam (ej: ?inv=fam), no mostramos la sección "Reserva de Lugar"
-  const esInvitacionFam = new URLSearchParams(window.location.search).get('inv') === 'fam';
+  const weddingState = useWeddingDateState(CONFIG.fecha); // 'before' | 'wedding-day' | 'after'
+  const albumHabilitado = weddingState !== 'before';
 
   // Scroll listener para mini-nav
   useEffect(() => {
@@ -704,7 +720,7 @@ export default function App() {
       {/* ── CONTENIDO ── */}
       <main style={{ position: 'relative', zIndex: 10, maxWidth: 860, margin: '0 auto', padding: '6rem 1.2rem 2rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
 
-        {/* 1 · HEADER + CUENTA REGRESIVA */}
+        {/* 1 · HEADER + CUENTA REGRESIVA o CARTELES */}
         <RevealOnScroll>
           <section className="card" style={{ textAlign: 'center' }}>
             <div className="animate-float-slow" style={{ display: 'inline-block', marginBottom: '1.5rem' }}>
@@ -715,16 +731,40 @@ export default function App() {
             </h1>
             <p style={{ fontFamily: 'var(--font-sans)', color: '#a08080', letterSpacing: '0.3em', textTransform: 'uppercase', fontSize: '0.78rem', marginBottom: '2.5rem', fontWeight: 500 }}>{CONFIG.fechaLegible}</p>
 
-            <div style={{ borderTop: '1px solid rgba(243,182,194,0.4)', paddingTop: '2rem', display: 'flex', justifyContent: 'center', gap: 'clamp(1rem,4vw,2.5rem)', flexWrap: 'wrap' }}>
-              {[['Días',countDown.days],['Horas',countDown.hours],['Minutos',countDown.minutes],['Segundos',countDown.seconds]].map(([l,v]) => (
-                <div key={l} style={{ textAlign: 'center' }}>
-                  <div style={{ width: 'clamp(60px,15vw,84px)', height: 'clamp(60px,15vw,84px)', background: 'rgba(252,228,236,0.5)', borderRadius: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(243,182,194,0.4)', marginBottom: 8, boxShadow: 'inset 0 2px 8px rgba(139,69,82,0.06)' }}>
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.4rem,4vw,2rem)', color: '#8b4552', fontWeight: 500 }}>{String(v).padStart(2,'0')}</span>
+            {weddingState === 'after' && (
+              <div style={{ borderTop: '1px solid rgba(243,182,194,0.4)', paddingTop: '2rem' }}>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.4rem,4vw,1.9rem)', color: '#8b4552', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+                  Gracias por haber estado con nosotros
+                </p>
+                <p style={{ color: '#6b5b5b', maxWidth: 480, margin: '0 auto', lineHeight: 1.8, fontSize: '1rem' }}>
+                  Esperamos que hayan pasado un día hermoso y que lo hayan disfrutado tanto como nosotros. Ya comenzamos nuestra vida juntos y los llevamos en el corazón. 💕
+                </p>
+              </div>
+            )}
+
+            {weddingState === 'wedding-day' && (
+              <div style={{ borderTop: '1px solid rgba(243,182,194,0.4)', paddingTop: '2rem' }}>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#c4788a', lineHeight: 1.3, marginBottom: '0.5rem' }}>
+                  ¡Hoy nos casamos! 💍
+                </p>
+                <p style={{ color: '#8b4552', fontSize: '1.05rem', fontStyle: 'italic' }}>
+                  Este es nuestro día y estamos felices de compartirlo con ustedes.
+                </p>
+              </div>
+            )}
+
+            {weddingState === 'before' && (
+              <div style={{ borderTop: '1px solid rgba(243,182,194,0.4)', paddingTop: '2rem', display: 'flex', justifyContent: 'center', gap: 'clamp(1rem,4vw,2.5rem)', flexWrap: 'wrap' }}>
+                {[['Días',countDown.days],['Horas',countDown.hours],['Minutos',countDown.minutes],['Segundos',countDown.seconds]].map(([l,v]) => (
+                  <div key={l} style={{ textAlign: 'center' }}>
+                    <div style={{ width: 'clamp(60px,15vw,84px)', height: 'clamp(60px,15vw,84px)', background: 'rgba(252,228,236,0.5)', borderRadius: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(243,182,194,0.4)', marginBottom: 8, boxShadow: 'inset 0 2px 8px rgba(139,69,82,0.06)' }}>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.4rem,4vw,2rem)', color: '#8b4552', fontWeight: 500 }}>{String(v).padStart(2,'0')}</span>
+                    </div>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#b09090', fontWeight: 600 }}>{l}</span>
                   </div>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#b09090', fontWeight: 600 }}>{l}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
         </RevealOnScroll>
 
@@ -740,7 +780,7 @@ export default function App() {
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Ceremonia</h3>
                 <p style={{ color: '#6b5b5b', lineHeight: 1.8, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                  Celebraremos nuestra unión a las <strong>21:00 hs</strong> en <em style={{ color: '#8b4552' }}>{CONFIG.lugar}</em>.
+                  Celebramos nuestra unión a las <strong>21:00 hs</strong> en <em style={{ color: '#8b4552' }}>{CONFIG.lugar}</em>.
                 </p>
                 <a href={CONFIG.ubicacionURL} target="_blank" rel="noreferrer" className="btn-primary" style={{ textDecoration: 'none', marginTop: 'auto' }}>
                   <MapPin size={15} /> Ver ubicación
@@ -760,7 +800,7 @@ export default function App() {
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Recepción y Fiesta</h3>
                 <p style={{ color: '#6b5b5b', lineHeight: 1.8, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                  Luego de la ceremonia, los invitamos a celebrar juntos hasta las <strong>{CONFIG.horaFin}</strong>.
+                  Luego de la ceremonia, celebramos juntos hasta las <strong>{CONFIG.horaFin}</strong>.
                 </p>
                 <button onClick={descargarICS} className="btn-outline" style={{ marginTop: 'auto' }}>
                   <CalendarHeart size={15} /> Agendar evento
@@ -770,33 +810,7 @@ export default function App() {
           </section>
         </RevealOnScroll>
 
-        {/* 3 · RESERVA — oculta cuando inv=fam en la URL */}
-        {!esInvitacionFam && (
-          <RevealOnScroll delay={50}>
-            <section style={{ background: 'linear-gradient(135deg,rgba(252,228,236,0.9) 0%,rgba(255,240,245,0.95) 100%)', backdropFilter: 'blur(20px)', borderRadius: '2.5rem', border: '1px solid rgba(243,182,194,0.5)', boxShadow: '0 8px 40px rgba(139,69,82,0.08)', padding: '3rem', textAlign: 'center' }}>
-              <div className="animate-float-slow" style={{ display: 'inline-block', marginBottom: '1.2rem' }}>
-                <CalendarHeart size={48} strokeWidth={1.4} color="#8b4552" />
-              </div>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', marginBottom: '0.9rem' }}>Reserva de Lugar</h2>
-              <p style={{ color: '#6b5b5b', marginBottom: '2.2rem', maxWidth: 520, margin: '0 auto 2.2rem', lineHeight: 1.75, fontSize: '0.95rem' }}>
-                La participación se realiza mediante reserva de tarjeta. El valor por persona:
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
-                {[
-                  { label: 'Hasta el 15/04', price: '$65.000', featured: true },
-                  { label: 'Hasta el 15/06', price: '$70.000', featured: false },
-                  { label: 'Día del evento', price: '$75.000', featured: false },
-                ].map((item, i) => (
-                  <div key={i} style={{ flex: '1 1 140px', maxWidth: 190, background: '#fff', borderRadius: '1.5rem', padding: '1.4rem 1rem', border: item.featured ? '2px solid #e8b4bc' : '1px solid rgba(243,182,194,0.45)', boxShadow: item.featured ? '0 8px 28px rgba(139,69,82,0.14)' : '0 2px 10px rgba(139,69,82,0.06)', transform: item.featured ? 'scale(1.04)' : 'none', position: 'relative' }}>
-                    {item.featured && <span style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: '#8b4552', color: '#fff', fontSize: '0.6rem', padding: '3px 12px', borderRadius: 9999, fontFamily: 'var(--font-sans)', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, whiteSpace: 'nowrap' }}>Precio actual</span>}
-                    <span style={{ display: 'block', fontSize: '0.65rem', color: '#a09090', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.6rem', fontFamily: 'var(--font-sans)' }}>{item.label}</span>
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: item.featured ? '#c4788a' : '#8b4552', fontWeight: 500 }}>{item.price}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </RevealOnScroll>
-        )}
+        {/* 3 · RESERVA — oculto (costos de tarjeta ya no se muestran) */}
 
         {/* 4 · INFO IMPORTANTE */}
         <RevealOnScroll delay={50}>
@@ -827,63 +841,28 @@ export default function App() {
           </section>
         </RevealOnScroll>
 
-        {/* 5 · MÚSICA */}
-        <RevealOnScroll delay={50}>
-          <section style={{ background: 'linear-gradient(135deg,#8b4552 0%,#6e3741 100%)', borderRadius: '2.5rem', padding: '3rem', textAlign: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 16px 60px rgba(139,69,82,0.35)' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 280, height: 280, background: 'rgba(255,255,255,0.04)', borderRadius: '50%', transform: 'translate(30%,-30%)' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 200, height: 200, background: 'rgba(255,255,255,0.04)', borderRadius: '50%', transform: 'translate(-30%,30%)' }} />
-            <div className="animate-float-music" style={{ display: 'inline-block', position: 'relative', zIndex: 1 }}>
-              <Music2 size={56} strokeWidth={1.3} color="rgba(252,228,236,0.9)" />
-            </div>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#fff', marginBottom: '0.9rem', position: 'relative', zIndex: 1 }}>La pista es de todos</h2>
-            <p style={{ color: 'rgba(252,228,236,0.8)', marginBottom: '2rem', maxWidth: 420, margin: '0 auto 2rem', lineHeight: 1.75, position: 'relative', zIndex: 1, fontSize: '0.97rem' }}>
-              ¿Qué canción no puede faltar para que bailemos todos?
-            </p>
-            <button onClick={() => setShowMusic(true)} style={{ position: 'relative', zIndex: 1, padding: '0.9rem 2.5rem', background: '#fff', color: '#8b4552', border: 'none', borderRadius: 9999, fontFamily: 'var(--font-sans)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: '0 8px 28px rgba(0,0,0,0.2)', transition: 'transform 0.15s, box-shadow 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 12px 36px rgba(0,0,0,0.25)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 8px 28px rgba(0,0,0,0.2)'; }}>
-              🎵 Sugerir canción
-            </button>
-          </section>
-        </RevealOnScroll>
+        {/* 5 · MÚSICA — sección oculta */}
 
-        {/* 6 · ASISTENCIA & REGALOS */}
+        {/* 6 · REGALOS (sin asistencia) */}
         <RevealOnScroll delay={50}>
           <section id="regalos" className="card">
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', textAlign: 'center', marginBottom: '2.5rem' }}>Acompáñanos</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '2.5rem' }}>
-              {/* Asistencia */}
-              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div className="animate-heartbeat" style={{ marginBottom: '1.2rem' }}>
-                  <CheckCircle size={52} strokeWidth={1.2} color="#c4788a" />
-                </div>
-                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Asistencia</h3>
-                <p style={{ color: '#6b5b5b', lineHeight: 1.8, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                  Confirmá tu asistencia para ayudarnos con la organización.
-                </p>
-                <button onClick={() => setShowRSVP(true)} className="btn-primary" style={{ marginTop: 'auto' }}>
-                  Confirmar asistencia
-                </button>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', textAlign: 'center', marginBottom: '2.5rem' }}>Regalos</h2>
+            <div style={{ maxWidth: 420, margin: '0 auto', textAlign: 'center' }}>
+              <div className="animate-wiggle" style={{ marginBottom: '1.2rem' }}>
+                <Gift size={52} strokeWidth={1.2} color="#c4788a" />
               </div>
-              {/* Regalos */}
-              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div className="animate-wiggle" style={{ marginBottom: '1.2rem' }}>
-                  <Gift size={52} strokeWidth={1.2} color="#c4788a" />
+              <p style={{ color: '#6b5b5b', lineHeight: 1.75, marginBottom: '1.2rem', fontSize: '0.93rem' }}>
+                El mayor regalo es tu presencia. Si querés hacernos un presente, podés contribuir con nuestra luna de miel.
+              </p>
+              <div style={{ background: 'rgba(252,228,236,0.4)', width: '100%', padding: '1.2rem 1.4rem', borderRadius: '1.2rem', border: '1px solid rgba(243,182,194,0.5)', textAlign: 'left' }}>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#8b4552', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.8rem' }}>Datos Bancarios</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.6rem', marginBottom: '0.6rem', borderBottom: '1px solid rgba(243,182,194,0.4)' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Alias</span>
+                  <CopyAlias alias={CONFIG.alias} />
                 </div>
-                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Regalos</h3>
-                <p style={{ color: '#6b5b5b', lineHeight: 1.75, marginBottom: '1.2rem', fontSize: '0.93rem' }}>
-                  El mayor regalo es tu presencia. Si querés hacernos un presente, podés contribuir con nuestra luna de miel.
-                </p>
-                <div style={{ background: 'rgba(252,228,236,0.4)', width: '100%', padding: '1.2rem 1.4rem', borderRadius: '1.2rem', border: '1px solid rgba(243,182,194,0.5)', textAlign: 'left', marginTop: 'auto' }}>
-                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#8b4552', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.8rem' }}>Datos Bancarios</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.6rem', marginBottom: '0.6rem', borderBottom: '1px solid rgba(243,182,194,0.4)' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Alias</span>
-                    <CopyAlias alias={CONFIG.alias} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Titular</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{CONFIG.titular}</span>
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#9d8585' }}>Titular</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{CONFIG.titular}</span>
                 </div>
               </div>
             </div>
@@ -905,10 +884,27 @@ export default function App() {
               <Images size={28} strokeWidth={1.5} />
             </div>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', marginBottom: '0.9rem' }}>Sumá tus fotos al álbum</h2>
-            <p style={{ color: '#6b5b5b', maxWidth: 520, margin: '0 auto 1.5rem', lineHeight: 1.75, fontSize: '0.95rem' }}>
-              ¿Tenés fotos de {CONFIG.novios.ella} y {CONFIG.novios.el} que quieras compartir? Subilas acá y se guardarán en nuestro álbum de Google Drive.
-            </p>
-            <AlbumUploadForm />
+
+            {!albumHabilitado ? (
+              <div style={{ maxWidth: 480, margin: '0 auto', padding: '1.5rem 1rem', background: 'rgba(252,228,236,0.35)', borderRadius: '1.5rem', border: '1px solid rgba(243,182,194,0.5)' }}>
+                <p style={{ color: '#6b5b5b', lineHeight: 1.8, fontSize: '1rem', marginBottom: '0.75rem' }}>
+                  ¡Qué lindo que quieras sumar tus fotos! 📸
+                </p>
+                <p style={{ color: '#8b4552', fontFamily: 'var(--font-serif)', fontSize: '1.05rem', fontStyle: 'italic' }}>
+                  Cuando llegue el día de nuestra boda, desde acá vas a poder subir las fotos que quieras compartir con nosotros. Las guardaremos con mucho cariño en nuestro álbum.
+                </p>
+                <p style={{ color: '#9d8585', fontSize: '0.88rem', marginTop: '1rem' }}>
+                  ¡Quedate atento/a que falta poquito!
+                </p>
+              </div>
+            ) : (
+              <>
+                <p style={{ color: '#6b5b5b', maxWidth: 520, margin: '0 auto 1.5rem', lineHeight: 1.75, fontSize: '0.95rem' }}>
+                  ¿Tenés fotos de {CONFIG.novios.ella} y {CONFIG.novios.el} que quieras compartir? Subilas acá y se guardarán en nuestro álbum de Google Drive.
+                </p>
+                <AlbumUploadForm />
+              </>
+            )}
           </section>
         </RevealOnScroll>
 
@@ -919,16 +915,23 @@ export default function App() {
         <div className="animate-heartbeat" style={{ display: 'inline-block', marginBottom: '1.2rem' }}>
           <Heart size={30} strokeWidth={1.5} color="#8b4552" fill="rgba(139,69,82,0.15)" />
         </div>
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem,6vw,3rem)', color: '#8b4552', marginBottom: '0.5rem' }}>¡Los esperamos!</h2>
+        {weddingState === 'after' ? (
+          <>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem,6vw,3rem)', color: '#8b4552', marginBottom: '0.5rem' }}>Gracias por compartir con nosotros</h2>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', color: '#6b5b5b', maxWidth: 420, margin: '0 auto 1rem', lineHeight: 1.7 }}>
+              Cada momento vivido junto a ustedes quedó guardado en nuestro corazón.
+            </p>
+          </>
+        ) : (
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(2rem,6vw,3rem)', color: '#8b4552', marginBottom: '0.5rem' }}>¡Los esperamos!</h2>
+        )}
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.68rem', letterSpacing: '0.28em', textTransform: 'uppercase', color: '#a09090', marginBottom: '2rem', fontWeight: 600 }}>
           {CONFIG.novios.ella} & {CONFIG.novios.el} · 25.07.2026
         </p>
         <ShareWhatsApp />
       </footer>
 
-      {/* ── MODALES ── */}
-      {showMusic && <MusicModal onClose={() => setShowMusic(false)} />}
-      {showRSVP && <RSVPModal onClose={() => setShowRSVP(false)} />}
+      {/* ── MODALES (ninguno activo por ahora) ── */}
 
       {/* ── ESTILOS ADICIONALES ── */}
       <style>{`
