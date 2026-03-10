@@ -599,6 +599,8 @@ export default function App() {
   const countDown = useCountdown(CONFIG.fecha);
   const weddingState = useWeddingDateState(CONFIG.fecha); // 'before' | 'wedding-day' | 'after'
   const albumHabilitado = weddingState !== 'before';
+  const esInvitacionFam = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('inv') === 'fam';
+  const mostrarCostosTarjeta = !esInvitacionFam && weddingState !== 'after';
 
   // Scroll listener para mini-nav
   useEffect(() => {
@@ -792,7 +794,33 @@ export default function App() {
           </section>
         </RevealOnScroll>
 
-        {/* 3 · RESERVA — oculto (costos de tarjeta ya no se muestran) */}
+        {/* 3 · RESERVA DE LUGAR (costos) — oculta si ?inv=fam o si ya pasó la fecha */}
+        {mostrarCostosTarjeta && (
+          <RevealOnScroll delay={50}>
+            <section style={{ background: 'linear-gradient(135deg,rgba(252,228,236,0.9) 0%,rgba(255,240,245,0.95) 100%)', backdropFilter: 'blur(20px)', borderRadius: '2.5rem', border: '1px solid rgba(243,182,194,0.5)', boxShadow: '0 8px 40px rgba(139,69,82,0.08)', padding: '3rem', textAlign: 'center' }}>
+              <div className="animate-float-slow" style={{ display: 'inline-block', marginBottom: '1.2rem' }}>
+                <CalendarHeart size={48} strokeWidth={1.4} color="#8b4552" />
+              </div>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', marginBottom: '0.9rem' }}>Reserva de Lugar</h2>
+              <p style={{ color: '#6b5b5b', marginBottom: '2.2rem', maxWidth: 520, margin: '0 auto 2.2rem', lineHeight: 1.75, fontSize: '0.95rem' }}>
+                La participación se realiza mediante reserva de tarjeta. El valor por persona:
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+                {[
+                  { label: 'Hasta el 15/04', price: '$65.000', featured: true },
+                  { label: 'Hasta el 15/06', price: '$70.000', featured: false },
+                  { label: 'Día del evento', price: '$75.000', featured: false },
+                ].map((item, i) => (
+                  <div key={i} style={{ flex: '1 1 140px', maxWidth: 190, background: '#fff', borderRadius: '1.5rem', padding: '1.4rem 1rem', border: item.featured ? '2px solid #e8b4bc' : '1px solid rgba(243,182,194,0.45)', boxShadow: item.featured ? '0 8px 28px rgba(139,69,82,0.14)' : '0 2px 10px rgba(139,69,82,0.06)', transform: item.featured ? 'scale(1.04)' : 'none', position: 'relative' }}>
+                    {item.featured && <span style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: '#8b4552', color: '#fff', fontSize: '0.6rem', padding: '3px 12px', borderRadius: 9999, fontFamily: 'var(--font-sans)', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, whiteSpace: 'nowrap' }}>Precio actual</span>}
+                    <span style={{ display: 'block', fontSize: '0.65rem', color: '#a09090', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.6rem', fontFamily: 'var(--font-sans)' }}>{item.label}</span>
+                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: item.featured ? '#c4788a' : '#8b4552', fontWeight: 500 }}>{item.price}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </RevealOnScroll>
+        )}
 
         {/* 4 · INFO IMPORTANTE */}
         <RevealOnScroll delay={50}>
