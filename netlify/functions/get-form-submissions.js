@@ -8,20 +8,25 @@
 const NETLIFY_API = 'https://api.netlify.com/api/v1';
 
 async function getFormSubmissions(siteId, formId, token, includeArchived) {
-  const url = `${NETLIFY_API}/sites/${siteId}/forms/${formId}/submissions`;
-  const r = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  if (!r.ok) return [];
-  const data = await r.json();
-  let list = Array.isArray(data) ? data : [];
-  // Netlify puede devolver solo "verified"; si pedimos archivadas y hay filtro, aquí se podría llamar también al listado de spam.
-  if (!includeArchived && list.some((s) => s.spam)) {
-    list = list.filter((s) => !s.spam);
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+  // Por defecto la API solo devuelve verified. Las archivadas (spam) hay que pedirlas con ?state=spam.
+  const rVerified = await fetch(`${NETLIFY_API}/sites/${siteId}/forms/${formId}/submissions`, { headers });
+  if (!rVerified.ok) return [];
+  const dataVerified = await rVerified.json();
+  let list = Array.isArray(dataVerified) ? dataVerified : [];
+  if (!includeArchived) {
+    return list.filter((s) => !s.spam);
   }
+  const rSpam = await fetch(`${NETLIFY_API}/sites/${siteId}/forms/${formId}/submissions?state=spam`, { headers });
+  if (rSpam.ok) {
+    const dataSpam = await rSpam.json();
+    const spamList = Array.isArray(dataSpam) ? dataSpam : [];
+    list = [...list, ...spamList];
+  }
+  list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   return list;
 }
 
