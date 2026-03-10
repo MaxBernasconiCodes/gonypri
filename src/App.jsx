@@ -889,14 +889,14 @@ export default function App() {
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem,5vw,2.6rem)', color: '#8b4552', marginBottom: '0.9rem' }}>Sumá tus fotos al álbum</h2>
 
             {!albumHabilitado ? (
-              <div style={{ maxWidth: 480, margin: '0 auto', padding: '1.5rem 1rem', background: 'rgba(252,228,236,0.35)', borderRadius: '1.5rem', border: '1px solid rgba(243,182,194,0.5)' }}>
-                <p style={{ color: '#6b5b5b', lineHeight: 1.8, fontSize: '1rem', marginBottom: '0.75rem' }}>
-                  ¡Qué lindo que quieras sumar tus fotos! 📸
-                </p>
-                <p style={{ color: '#8b4552', fontFamily: 'var(--font-serif)', fontSize: '1.05rem', fontStyle: 'italic' }}>
+              <div style={{ maxWidth: 520, margin: '0 auto', padding: '1.5rem 1.5rem', background: 'rgba(252,228,236,0.4)', borderRadius: '1.2rem', border: '1px solid rgba(243,182,194,0.5)', textAlign: 'center' }}>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: '#8b4552', marginBottom: '0.75rem' }}>
+                  Próximamente podrás subir tus fotos
+                </h3>
+                <p style={{ color: '#6b5b5b', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '0.75rem' }}>
                   Cuando llegue el día de nuestra boda, desde acá vas a poder subir las fotos que quieras compartir con nosotros. Las guardaremos con mucho cariño en nuestro álbum.
                 </p>
-                <p style={{ color: '#9d8585', fontSize: '0.88rem', marginTop: '1rem' }}>
+                <p style={{ color: '#9d8585', fontSize: '0.88rem', fontWeight: 500 }}>
                   ¡Quedate atento/a que falta poquito!
                 </p>
               </div>
