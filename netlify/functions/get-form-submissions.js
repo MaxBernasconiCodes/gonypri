@@ -24,7 +24,8 @@ async function getFormSubmissions(siteId, formId, token, includeArchived) {
   if (rSpam.ok) {
     const dataSpam = await rSpam.json();
     const spamList = Array.isArray(dataSpam) ? dataSpam : [];
-    list = [...list, ...spamList];
+    // Marcar como archivadas para que el admin muestre el botón Restaurar y el estilo
+    list = [...list, ...spamList.map((s) => ({ ...s, spam: true }))];
   }
   list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   return list;

@@ -439,14 +439,14 @@ export default function Admin() {
                       {sortedRsvp.map((s) => {
                         const key = `rsvp-${s.id}`;
                         const loadingRow = actionLoading === key;
-                        const isArchived = s.spam === true;
+                        const isArchived = s.spam === true || s.state === 'spam';
                         const label = s.data?.nombre ?? 'esta respuesta';
                         return (
-                          <tr key={s.id} style={{ opacity: isArchived ? 0.75 : 1 }}>
+                          <tr key={s.id} style={isArchived ? { background: 'rgba(0,0,0,0.04)' } : undefined}>
                             <td style={tdStyle}>
                               {s.data?.nombre ?? '—'}
                               {isArchived && (
-                                <span style={{ marginLeft: 8, fontSize: '0.7rem', color: '#9d8585', fontStyle: 'italic' }}>archivada</span>
+                                <span style={{ marginLeft: 8, fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#8b4552', background: 'rgba(139,69,82,0.12)', padding: '2px 8px', borderRadius: 6 }}>Archivada</span>
                               )}
                             </td>
                             <td style={tdStyle}>{s.data?.asistencia === 'si' ? '✅ Sí' : '❌ No'}</td>
@@ -459,7 +459,7 @@ export default function Admin() {
                                     type="button"
                                     onClick={() => runAction('rsvp', s.id, 'restore')}
                                     disabled={loadingRow}
-                                    title="Restaurar"
+                                    title="Desarchivar (restaurar a la lista principal)"
                                     style={btnIconStyle}
                                   >
                                     {loadingRow ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <ArchiveRestore size={14} />}
@@ -524,14 +524,14 @@ export default function Admin() {
                       {sortedMusica.map((s) => {
                         const key = `musica-${s.id}`;
                         const loadingRow = actionLoading === key;
-                        const isArchived = s.spam === true;
+                        const isArchived = s.spam === true || s.state === 'spam';
                         const label = s.data?.cancion ? `${s.data?.nombre}: ${s.data.cancion}` : (s.data?.nombre ?? 'esta sugerencia');
                         return (
-                          <tr key={s.id} style={{ opacity: isArchived ? 0.75 : 1 }}>
+                          <tr key={s.id} style={isArchived ? { background: 'rgba(0,0,0,0.04)' } : undefined}>
                             <td style={tdStyle}>
                               {s.data?.nombre ?? '—'}
                               {isArchived && (
-                                <span style={{ marginLeft: 8, fontSize: '0.7rem', color: '#9d8585', fontStyle: 'italic' }}>archivada</span>
+                                <span style={{ marginLeft: 8, fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#8b4552', background: 'rgba(139,69,82,0.12)', padding: '2px 8px', borderRadius: 6 }}>Archivada</span>
                               )}
                             </td>
                             <td style={tdStyle}>{s.data?.cancion ?? '—'}</td>
@@ -543,7 +543,7 @@ export default function Admin() {
                                     type="button"
                                     onClick={() => runAction('musica', s.id, 'restore')}
                                     disabled={loadingRow}
-                                    title="Restaurar"
+                                    title="Desarchivar (restaurar a la lista principal)"
                                     style={btnIconStyle}
                                   >
                                     {loadingRow ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <ArchiveRestore size={14} />}
