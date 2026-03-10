@@ -1,0 +1,256 @@
+/* =====================================================
+   CASAMIENTO PRIKI & GONZA - Global Styles
+   ===================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bordo: #8b4552;
+  --bordo-dark: #6e3741;
+  --pink-soft: #f9f0f2;
+  --pink-light: #fce4ec;
+  --text-main: #3d2c2c;
+  --text-muted: #78716c;
+  --white-glass: rgba(255, 253, 253, 0.92);
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Jost', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #fffcfc;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar personalizada ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #fff5f5; }
+::-webkit-scrollbar-thumb { background: #e8b4bc; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bordo); }
+
+/* =====================================================
+   ANIMACIONES GLOBALES
+   ===================================================== */
+
+/* Pétalos cayendo */
+@keyframes fall {
+  0%   { transform: translateY(-10vh) rotate(0deg) scale(0.8) translateX(0); opacity: 0; }
+  10%  { opacity: 0.7; }
+  50%  { transform: translateY(50vh) rotate(180deg) scale(1) translateX(30px); }
+  80%  { opacity: 0.5; }
+  100% { transform: translateY(110vh) rotate(360deg) scale(1.2) translateX(-20px); opacity: 0; }
+}
+
+/* Entrada del modal */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Fade-in simple */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Entrada suave de la portada */
+@keyframes coverReveal {
+  0%   { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Flotación lenta */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* Flotación música */
+@keyframes floatMusic {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-10px) rotate(6deg); }
+}
+
+/* Heartbeat */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15%       { transform: scale(1.18); }
+  30%       { transform: scale(1); }
+  45%       { transform: scale(1.12); }
+}
+
+/* Wiggle */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(-9deg); }
+  75%       { transform: rotate(9deg); }
+}
+
+/* Swing campana */
+@keyframes swing {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(12deg); }
+  40%       { transform: rotate(-12deg); }
+  60%       { transform: rotate(6deg); }
+  80%       { transform: rotate(-6deg); }
+}
+
+/* Clink copas */
+@keyframes clinkLeft {
+  0%, 70%, 100% { transform: rotate(0deg) translate(0,0); }
+  85% { transform: rotate(18deg) translate(4px, -3px); }
+}
+@keyframes clinkRight {
+  0%, 70%, 100% { transform: rotate(0deg) translate(0,0); }
+  85% { transform: rotate(-18deg) translate(-4px, -3px); }
+}
+
+/* Pulso hilo rojo */
+@keyframes pulseLine {
+  0%, 100% { opacity: 0.6; stroke-dashoffset: 0; }
+  50%       { opacity: 1; stroke-dashoffset: -20; }
+}
+
+/* Shimmer para copiar */
+@keyframes shimmer {
+  0%   { background-position: -300px 0; }
+  100% { background-position: 300px 0; }
+}
+
+/* Barra de sonido */
+@keyframes soundBar {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+
+/* =====================================================
+   CLASES DE UTILIDAD ANIMACIÓN
+   ===================================================== */
+
+.animate-fade-in-up  { animation: fadeInUp 0.45s cubic-bezier(.22,.61,.36,1) forwards; }
+.animate-fade-in     { animation: fadeIn 0.6s ease forwards; }
+.animate-cover       { animation: coverReveal 0.9s cubic-bezier(.22,.61,.36,1) forwards; }
+.animate-float-slow  { animation: floatSlow 4s ease-in-out infinite; }
+.animate-float-music { animation: floatMusic 3.5s ease-in-out infinite; }
+.animate-heartbeat   { animation: heartbeat 2.5s ease-in-out infinite; }
+.animate-wiggle      { animation: wiggle 3s ease-in-out infinite; }
+.animate-swing       { animation: swing 3s ease-in-out infinite; transform-origin: top center; }
+.animate-clink-left  { animation: clinkLeft 3s ease-in-out infinite; transform-origin: bottom center; }
+.animate-clink-right { animation: clinkRight 3s ease-in-out infinite; transform-origin: bottom center; }
+
+/* =====================================================
+   COMPONENTES BASE
+   ===================================================== */
+
+/* Tarjeta estándar */
+.card {
+  background: var(--white-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 2.5rem;
+  border: 1px solid rgba(243, 182, 194, 0.35);
+  box-shadow: 0 8px 40px rgba(139, 69, 82, 0.08), 0 1px 3px rgba(139, 69, 82, 0.04);
+  padding: 3rem;
+}
+
+@media (max-width: 640px) {
+  .card { padding: 2rem 1.5rem; border-radius: 1.8rem; }
+}
+
+/* Botón primario */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2.5rem;
+  background: var(--bordo);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 6px 20px rgba(139, 69, 82, 0.25);
+  width: 100%;
+}
+.btn-primary:hover {
+  background: var(--bordo-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(139, 69, 82, 0.35);
+}
+.btn-primary:active { transform: translateY(0); }
+
+/* Botón outline */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2.5rem;
+  background: transparent;
+  color: var(--bordo);
+  border: 1.5px solid var(--bordo);
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  width: 100%;
+}
+.btn-outline:hover {
+  background: #fff0f2;
+  transform: translateY(-1px);
+}
+
+/* Input de formulario */
+.form-input {
+  width: 100%;
+  padding: 0.9rem 1.25rem;
+  border: 1.5px solid #f3b6c2;
+  border-radius: 1rem;
+  background: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus {
+  border-color: var(--bordo);
+  box-shadow: 0 0 0 3px rgba(139, 69, 82, 0.12);
+}
+.form-input::placeholder { color: #b0a09f; }
+
+/* ── Divisor decorativo ── */
+.divider-ornament {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #e8b4bc;
+  margin: 0 auto 2.5rem;
+  max-width: 200px;
+}
+.divider-ornament::before,
+.divider-ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e8b4bc, transparent);
+}

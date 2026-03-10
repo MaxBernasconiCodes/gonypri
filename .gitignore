@@ -1,0 +1,29 @@
+# Dependencias
+node_modules
+
+# Build (Netlify genera dist con "npm run build")
+dist
+build
+
+# Variables de entorno (no subir secretos)
+.env
+.env.local
+.env.*.local
+
+# Logs y caché
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.cache
+
+# Sistema / IDE
+.DS_Store
+*.swp
+*.swo
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Opcional: descomentá si querés versionar README o LICENSE
+# /README.md
+# /LICENSE
