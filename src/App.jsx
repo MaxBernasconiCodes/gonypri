@@ -808,7 +808,6 @@ export default function App() {
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
                 {[
-                  { label: 'Hasta el 15/04', price: '$65.000', featured: true },
                   { label: 'Hasta el 15/06', price: '$70.000', featured: false },
                   { label: 'Día del evento', price: '$75.000', featured: false },
                 ].map((item, i) => (
