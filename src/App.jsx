@@ -900,7 +900,7 @@ export default function App() {
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.5rem', color: '#8b4552', marginBottom: '0.75rem' }}>Regalos</h3>
                 <p style={{ color: '#6b5b5b', lineHeight: 1.75, marginBottom: '1.2rem', fontSize: '0.93rem' }}>
-                  El mayor regalo es tu presencia. Si querés hacernos un presente, podés contribuir con nuestra luna de miel.
+                El mejor regalo es que nos acompañen en este día tan especial. Pero si desean hacernos un obsequio, pueden hacerlo a través del siguiente alias:
                 </p>
                 <div style={{ background: 'rgba(252,228,236,0.4)', width: '100%', padding: '1.2rem 1.4rem', borderRadius: '1.2rem', border: '1px solid rgba(243,182,194,0.5)', textAlign: 'left', marginTop: 'auto' }}>
                   <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', color: '#8b4552', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.8rem' }}>Datos Bancarios</p>
